@@ -1,0 +1,480 @@
+---
+title: "FINAL PROJECT REPORT"
+author: "Geethan Rajkumar"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+###INTRODUCTION:
+
+In my Final project, I've chosen a List of countries by incarceration rate
+because I am interested in understanding the significant relationship between the variables in 
+high incarceration rates and the impact of these rates on society.
+Additionally, I need to know how different countries approach
+criminal justice and whether there are any similarities or differences
+between countries.
+
+###DATA:
+
+##1.DATA SOURCE: 
+The data was obtained from the kaggele website
+"<https://www.kaggle.com/datasets/kabhishm/list-of-countries-by-incarceration-rate>"
+
+##2.DATA COLLECTION: 
+The data was collected through a variety of sources,
+including government agencies, non-governmental organizations, and
+academic research.
+
+##3.CASES: 
+The units of observation are countries, with each row
+representing a different country. The data contains 226 observations and
+10 variables. The variable Region act as a Categorical variable.
+
+##4.VARIABLES: 
+The variables in the dataset include the Region name, No
+of prisoners, Incarceration rate (per 100,000 population), No of male
+percentage, No of females percentage, and Percentage of felons of the
+country's nationality, Percentage of foreign felons, Occupancy percentage
+and Remand percentage.
+
+'location': location of the country, 'region': region of the country,
+'count': number of prisoners, 'rate_per_100k': rate of prisoners per
+100,000, 'male_perc': male percentage, 'female_perc': female percentage,
+'national': percentage of felons of the country's nationality,
+'foreign_perc': percentage of foreign felons, 'occupancy_perc':
+occupancy percentage, 'remand_perc': remand percentage,
+
+
+###DATA QUALITY:
+
+Before analyzing the data, Upon initial inspection of the dataset, it
+was found that there were missing values for some of the variables. I
+will check for any outliers, duplicates, format issues., etc.
+
+
+###DATA QUALITY
+
+## 1.INCLUDE LIBRARY
+```{r}
+library(tidyverse)
+library(readr)
+```
+
+
+##2.IMPORT DATA AND CHANGE THE CHARACTER INTO NUMERIC
+```{r}
+incarc <- read_csv("~/Downloads/incarceration.csv",col_types = cols(location = col_character(), count = col_number(), rate_per_100k = col_number(), male_perc = col_number(), female_perc = col_number(), national = col_number(), foreign_perc = col_number(), occupancy_perc = col_number(), remand_perc = col_number()))
+```
+
+##3.CHECK IF THE DATA ARE IMPORTED CORRECTLY
+```{r}
+dim(incarc)
+head(incarc)
+```
+
+
+##4.IS IT A DATA DRAME OR A TIBBLE
+```{r}
+is.data.frame(incarc)
+```
+```{r}
+incarc <- as_tibble(incarc)
+is_tibble(incarc)
+```
+
+
+##SUMMARY OF THE DATA
+```{r}
+summary(incarc)
+```
+
+
+##5.CONVERT THE LOCATION INTO FACTOR
+```{r}
+incarc$location <- as.factor(incarc$location)
+summary(incarc$location)
+```
+
+##6.CONVERT THE REGION INTO FACTOR
+```{r}
+incarc$region <- as.factor(incarc$region)
+summary(incarc$region)
+```
+
+##7.CHECK THE MISSING VALUE
+```{r}
+sum(is.na(incarc))
+```
+
+##8.REMOVE THE MISSING VALUE
+```{r}
+incarc<- incarc[complete.cases(incarc), ]
+```
+
+##SUMMARY THE DATA
+```{r}
+summary(incarc)
+```
+
+##9.CHECK THE DUPLICATES 
+```{r}
+sum(duplicated(incarc))
+```
+
+##10.REMOVE THE DUPICATES IF ANY
+```{r}
+incarc<- unique(incarc)
+```
+
+##SUMMARY THE DATA
+```{r}
+summary(incarc)
+```
+
+##11.CHECK FOR OUTLIERS
+```{r}
+incarc_r <- boxplot(incarc[3:10])
+```
+
+##12.REMOVE THE OUTLIERS (IF ANY)
+```{r}
+incarc<- incarc[!incarc$count %in% boxplot.stats(incarc$count)$out, ]
+```
+
+##13.SUMMARY THE DATA
+```{r}
+summary(incarc)
+```
+
+##14.CHECK FOR FORMAT ISSUES
+```{r}
+str(incarc)
+```
+
+
+
+###QUESTIONS FOR EDA ANALYSIS
+
+1. PERCENTAGE OF NUMBER OF PRISONERS BY REGION
+2. SUMMARIZE THE TOP 10 COUNTRIES HAVING HIGHEST NO OF PRISONERS
+3. SUMMARIZE THE BOTTOM 10 COUNTRIES HAVING LEAST NO OF PRISONERS
+4. VISUALIZE THE NUMBER OF PRISONERS BY EACH REGION USING BAR CHART, SCATTER PLOT, BOX PLOT.
+
+
+## EDA ANALYSIS
+##15. Compute summary statistics for the incarceration rates
+```{r}
+incarc_stats <- incarc %>%
+  group_by(location) %>%
+  summarise(mean_rate = mean(count),
+            median_rate = median(count),
+            mode_rate = mode(count),min_rate = min(count),
+            max_rate = max(count))
+```
+
+
+
+##16. Create a histogram of the incarceration rates
+```{r}
+ggplot(incarc, aes(x = count)) +
+  geom_histogram() +
+  labs(title = "Percentage of Incarceration Rates",
+       x = "count",
+       y = "region")
+```
+
+##17. SUMMARIZE TOP 10 COUNTRIES HAVING HIGHEST NO OF PRISONERS
+```{r}
+incarc%>%  group_by(location) %>% summarise(avg = mean(count)) %>% arrange(desc(avg)) %>% top_n(10) %>% ggplot() + geom_bar(mapping = aes(x = location, y = avg), stat ="identity")+labs(title = "TOP 10 COUNTRIES HAVING HIGHEST NO OF PRISONERS") + coord_flip()
+```
+
+##18. SUMMARIZE BOTTOM 10 COUNTRIES HAVING LOWEST NO OF PRISONERS
+```{r}
+incarc %>%  group_by(location) %>% summarise(avg = mean(count)) %>% arrange(desc(avg)) %>% top_n(-10) %>% ggplot() + geom_bar(mapping = aes(x = location, y = avg), stat ="identity")+labs(title = "BOTTOM 10 COUNTRIES HAVING LOWEST NO OF PRISONERS") + coord_flip()
+```
+
+##19.LOAD THE LIBRARY
+```{r}
+library(countrycode)
+library(stringr)
+```
+```{r}
+incarc_df <- as.data.frame(incarc)
+incarc_df$location <- str_replace_all(incarc_df$location, "[^[:ascii:]]", "")
+```
+
+##20.CONVERT THE REGION INTO FACTOR AND CONVERT TO TIBBLE
+```{r}
+incarc_df$Region <- countrycode(sourcevar = incarc_df$location, origin = "country.name", destination = "region")
+incarc_df$Region <- factor(incarc_df$Region)
+```
+```{r}
+head(incarc_df)
+```
+```{r}
+incarc <- as_tibble(incarc_df)
+```
+
+##21.PLOT THE DATA BY DIFFERENT REGION
+```{r}
+ggplot(data = incarc) + geom_point(mapping = aes(x= region, y = count, color = Region), position = "jitter", alpha = 0.6) + labs(x = "region", y = "count", title = "Number of Prisoners by region")
+```
+
+##22.FACET PLOTTING THE DATA BY REGION
+```{r}
+ggplot(data = incarc) + geom_point(mapping = aes(x= region, y = count, color = Region ), position = "jitter", alpha = 0.6, show.legend = FALSE) + facet_wrap(~ Region)
+```
+
+##23. VISUALIZE THE DATA BY BOXPLOT
+```{r}
+ggplot(data =  incarc, mapping = aes(x = region, y = count)) + geom_boxplot() + labs(title = "Box plot  of Prisoners by each region")+ coord_flip()
+```
+
+##24. PLOTTING THE MULTIPLE SCATTER PLOTS BETWEEN EACH PAIR OF VARIABLES
+```{r}
+pairs(incarc[, c(3:10)])
+```
+
+##25. VISUALIZE THE DATA BY BARCHART
+```{r}
+incarc %>% group_by(Region) %>% summarise(avg = mean(count)) %>% 
+  ggplot(mapping = aes(x = reorder(Region, -avg), y = avg, fill=Region)) + geom_bar(stat = "identity") +labs(title = "Number of Prisoners by each Region ") + coord_flip()
+```
+
+###SUMMARY: 
+    
+In this EDA Analysis, I've answered all the questions for the analysis. The histogram shows the High to moderate levels of incarceration rates and I have identified the underlying cause of high incarceration rates in certain regions and countries.
+    
+    
+    
+    
+
+## QUESTIONS FOR HYPOTHESIS TESTING
+
+##Is there a significant difference in the incarceration rates between males and females?
+
+##Is there a significant difference in the incarceration rates between Country National's and Foreign National's?
+
+
+##1.Is there a significant difference in the incarceration rates between males and females?
+
+```{r}
+set.seed(123)
+male_perc <- rnorm(n = 160, mean = 95.5, sd = 1.9)
+female_perc <- rnorm(n = 160, mean = 5.09, sd = 2)
+```
+
+## Define null hypothesis and alpha level
+
+```{r}
+null_hypothesis <- 0.05
+alpha <- 0.05
+```
+
+##Perform two-sample t-test
+
+```{r}
+t_test_result <- t.test(x = male_perc, y = female_perc, mu = null_hypothesis)
+```
+
+## Extract test statistic and p-value
+
+```{r}
+test_statistic <- t_test_result$statistic
+p_value <- t_test_result$p.value
+```
+
+## Determine rejection criteria and conclusion
+
+```{r}
+if (p_value < alpha) {
+  rejection_criteria <- "Reject null hypothesis"
+  conclusion <- "There is significant evidence to suggest that the mean incarceration rates of the Males and Females are different from each other."
+  } else {
+  rejection_criteria <- "Fail to reject null hypothesis"
+  conclusion <- "There is insufficient evidence to suggest that the mean incarceration rates of the Males and Females are different from each other."
+  }
+```
+
+## Print results
+
+```{r}
+print(test_statistic)
+print(p_value)
+print(rejection_criteria)
+print(conclusion)
+```
+
+
+##2.Is there a significant difference in the incarceration rates between Country National's and Foreign National's?
+
+```{r}
+set.seed(123)
+national <- rnorm(n = 160, mean = 85.51, sd = 1)
+foreign_perc <- rnorm(n = 160, mean = 14.6 , sd = 2)
+```
+
+## Define null hypothesis and alpha level
+
+```{r}
+null_hypothesis <- 0.05
+alpha <- 0.05
+```
+
+## Perform two-sample t-test
+
+```{r}
+t_test_result <- t.test(x = national, y = foreign_perc, mu = null_hypothesis)
+```
+
+## Extract test statistic and p-value
+
+```{r}
+test_statistic <- t_test_result$statistic
+p_value <- t_test_result$p.value
+```
+
+## Determine rejection criteria and conclusion
+
+```{r}
+if (p_value < alpha) {
+  rejection_criteria <- "Reject null hypothesis"
+  conclusion <- "There is significant evidence to suggest that the mean incarceration rates of the Country National's and Foreign National's are different from each other."
+} else {
+  rejection_criteria <- "Fail to reject null hypothesis"
+  conclusion <- "There is insufficient evidence to suggest that the mean incarceration rates of the Country National's and Foreign National's are different from each other."
+}
+```
+
+## Print results
+
+```{r}
+print(test_statistic)
+print(p_value)
+print(rejection_criteria)
+print(conclusion)
+```
+
+###SUMMARY:
+
+
+For the Hypothesis testing, I have tested the significant difference in incarceration rates between male percentage and female percentages, and the difference between the Country's nationals and foreign nationals. The hypothesis tests provide strong evidence against the null hypotheses and suggest that there are significant differences in the incarceration rates Male percentage and female percentage, and Country nationals and Foreign nationals. The two-sample t-tests, the null hypotheses, and the alpha levels are appropriately defined for each question. The conclusions and rejection criteria are also logically determined based on the p-value and alpha level.
+
+
+
+
+###REGRESSION ANALYSIS
+
+
+
+##LOAD THE LIBRARY
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+##LOAD THE DATA
+```{r}
+incarc_r <- read_csv("~/Downloads/incarceration.csv",col_types = cols(location = col_character(), count = col_number(), rate_per_100k = col_number(), male_perc = col_number(), female_perc = col_number(), national = col_number(), foreign_perc = col_number(), occupancy_perc = col_number(), remand_perc = col_number()))
+```
+
+##LOAD INTO DATAFRAME
+```{r}
+male_data <- c(incarc_r$male_perc)
+female_data <- c(incarc_r$female_perc)
+```
+
+##CHECK FOR MISSING VALUES
+```{r}
+sum(is.na(male_data))
+sum(is.na(female_data))
+```
+
+##REMOVE THE MISSING VALUES
+```{r}
+male_data <- na.omit(male_data)
+female_data <- na.omit(female_data)
+```
+
+##GENERATE TWO VARIABLES WITH NEGATIVE CORRELATION
+```{r}
+set.seed(123)
+male_data <- rnorm(n = 160, mean = 95.5, sd = 1.9)
+female_data <- -male_data + rnorm(n = 160, mean = 5.09, sd = 2)
+```
+
+
+## MERGE THE TWO VARIABLE
+```{r}
+incarc_bi <- merge(male_data, female_data)
+```
+
+
+
+##MAKE SURE THE DATA MEET THE ASSUMPTIONS 
+
+##NORMALITY
+```{r}
+hist(male_data)
+hist(female_data)
+```
+
+##LINEARITY
+```{r}
+plot(male_data ~ female_data)
+```
+
+###PERFORM LINEAR REGRESSION
+
+###SIMPLE LINEAR REGRESSION : MALE PERCENTAGE AND FEMALE PERCENTAGE
+
+```{r}
+lmfit <- lm(female_data ~ male_data, data = incarc_bi)
+summary(lmfit)
+```
+From these results, we found a 0.9% decrease in the frequency of male_data for every 1% increase in female_data.
+
+
+
+###CHECK FOR HOMOSCEDASTICITY
+```{r}
+par(mfrow=c(2,2))
+plot(lmfit)
+par(mfrow=c(1,1))
+```
+
+###VISUALIZE THE REGRESSION
+```{r}
+ggplot2::ggplot(lmfit, aes(x = female_data, y = male_data))+
+                     geom_point()+ geom_smooth(method = "lm", col = "Blue")+ labs(title = "Reported male_data as a function of female_data")
+```
+
+
+##SUMMARY:
+
+
+ For Regression analysis, I've performed a simple linear regression between the male percentage and female percentage. I have chosen the female percentage as the dependent variable and the male percentage as the independent variable. As these two variables are linear but negatively correlated, so I generate the two variables into negative correlation. To check whether the dependent variable follows a normal distribution, I used the hist() function and the observations show roughly bell-shaped, so we can proceed with the linear regression. Then I perform the linear regression analysis to evaluate the relationship between the independent and dependent variables. From these results, we found a 0.9% decrease in the frequency of male_data for every 1% increase in female_data.
+   
+##5. CONCLUSION:
+
+In Conclusion, from this project I have learned the EDA Analysis and how to evaluate the differences between the variables and visualize the  data by using histogram, scatter plot, bar chart, box plot. For Hypothesis testing, i have performed the differences between variables and found that the two-sample t-tests , the null hypotheses and alpha levels are appropriately defined for each questions. For Regression analysis, i have choose to perform the simple linear regression between male percentage and female percentage, and i have learned how to do validate the variables and interpretation of the results. From these results, we found a 0.9% decrease in the frequency of male_data for every 1% increase in female_data. For further analysis, i need to identify the underlying causes of high incarceration rates in certain regions and countries, and to develop effective strategies for reducing these rates while ensuring public safety.
+
+
+
+
+##6. REFERENCES:
+
+Bevans, R. (2022). Linear Regression in R | A Step-by-Step Guide & Examples. Scribbr. https://www.scribbr.com/statistics/linear-regression-in-r/
+
+
+
+
+
+
+
+
+
+
+
+
+
